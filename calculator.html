@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мозг — Калькулятор</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-start: #0f0c29;
+      --bg-end: #302b63;
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --display-bg: rgba(0, 0, 0, 0.35);
+      --btn-num: rgba(255, 255, 255, 0.12);
+      --btn-num-hover: rgba(255, 255, 255, 0.2);
+      --btn-op: #7c3aed;
+      --btn-op-hover: #6d28d9;
+      --btn-op-active: #5b21b6;
+      --accent: #a78bfa;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius: 16px;
+      --radius-btn: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text);
+      padding: 16px;
+    }
+
+    #calculator {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 24px;
+      width: 100%;
+      max-width: 340px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    #logo {
+      text-align: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 20px;
+      letter-spacing: 0.02em;
+    }
+
+    #display {
+      width: 100%;
+      min-height: 72px;
+      text-align: right;
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 600;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--card-border);
+      background: var(--display-bg);
+      overflow-x: auto;
+      overflow-y: hidden;
+      word-break: break-all;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    #display:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    #display.error {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.5);
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      padding: 18px 8px;
+      font-size: 1.35rem;
+      font-family: inherit;
+      border-radius: var(--radius-btn);
+      border: none;
+      background: var(--btn-num);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:hover {
+      background: var(--btn-num-hover);
+    }
+
+    button:active {
+      transform: scale(0.96);
+    }
+
+    button.operator {
+      background: var(--btn-op);
+      color: #fff;
+    }
+
+    button.operator:hover {
+      background: var(--btn-op-hover);
+    }
+
+    button.operator:active {
+      background: var(--btn-op-active);
+    }
+
+    button.zero {
+      grid-column: span 2;
+    }
+
+    button.equals {
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+    }
+
+    button.equals:hover {
+      background: linear-gradient(135deg, #6d28d9, #4f46e5);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      button {
+        transition: none;
+      }
+      button:active {
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="calculator" role="application" aria-label="Калькулятор Мозг">
+    <div id="logo" aria-hidden="true">🧠 Мозг</div>
+    <div
+      id="display"
+      tabindex="0"
+      role="textbox"
+      aria-label="Результат"
+      aria-readonly="true"
+    >0</div>
+    <div class="buttons">
+      <button type="button" class="clear" onclick="calc.clear()" aria-label="Очистить">C</button>
+      <button type="button" onclick="calc.backspace()" aria-label="Удалить символ">⌫</button>
+      <button type="button" onclick="calc.append('%')" aria-label="Процент">%</button>
+      <button type="button" class="operator" onclick="calc.append('÷')" aria-label="Разделить">÷</button>
+
+      <button type="button" onclick="calc.append('7')">7</button>
+      <button type="button" onclick="calc.append('8')">8</button>
+      <button type="button" onclick="calc.append('9')">9</button>
+      <button type="button" class="operator" onclick="calc.append('×')" aria-label="Умножить">×</button>
+
+      <button type="button" onclick="calc.append('4')">4</button>
+      <button type="button" onclick="calc.append('5')">5</button>
+      <button type="button" onclick="calc.append('6')">6</button>
+      <button type="button" class="operator" onclick="calc.append('−')" aria-label="Минус">−</button>
+
+      <button type="button" onclick="calc.append('1')">1</button>
+      <button type="button" onclick="calc.append('2')">2</button>
+      <button type="button" onclick="calc.append('3')">3</button>
+      <button type="button" class="operator" onclick="calc.append('+')" aria-label="Плюс">+</button>
+
+      <button type="button" class="zero" onclick="calc.append('0')">0</button>
+      <button type="button" onclick="calc.append('.')" aria-label="Запятая">.</button>
+      <button type="button" class="operator equals" onclick="calc.equals()" aria-label="Равно">=</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const displayEl = document.getElementById('display');
+      const OP_MAP = { '÷': '/', '×': '*', '−': '-', '+': '+' };
+
+      function parseNumber(str) {
+        const s = str.trim().replace(',', '.');
+        if (!/^-?\d*\.?\d*$/.test(s)) return NaN;
+        return s === '' || s === '-' ? NaN : parseFloat(s);
+      }
+
+      function tokenize(expr) {
+        const normalized = expr
+          .replace(/÷/g, '/')
+          .replace(/×/g, '*')
+          .replace(/−/g, '-')
+          .replace(/\s/g, '');
+        const tokens = [];
+        let i = 0;
+        while (i < normalized.length) {
+          if (/[+\-*/]/.test(normalized[i])) {
+            tokens.push({ type: 'op', value: normalized[i] });
+            i++;
+          } else if (normalized[i] === '%') {
+            if (tokens.length && tokens[tokens.length - 1].type === 'num') {
+              tokens[tokens.length - 1].value /= 100;
+            }
+            i++;
+          } else if (/\d|\./.test(normalized[i])) {
+            let num = '';
+            while (i < normalized.length && /[\d.]/.test(normalized[i])) {
+              num += normalized[i++];
+            }
+            const n = parseFloat(num);
+            if (!isNaN(n)) tokens.push({ type: 'num', value: n });
+          } else {
+            i++;
+          }
+        }
+        return tokens;
+      }
+
+      function evaluate(tokens) {
+        if (tokens.length === 0) return 0;
+        let i = 0;
+        let value = tokens[0].type === 'num' ? tokens[0].value : 0;
+        while (i < tokens.length) {
+          const op = tokens[i];
+          if (op.type === 'op' && i + 1 < tokens.length && tokens[i + 1].type === 'num') {
+            const next = tokens[i + 1].value;
+            switch (op.value) {
+              case '+': value += next; break;
+              case '-': value -= next; break;
+              case '*': value *= next; break;
+              case '/':
+                if (next === 0) throw new Error('Деление на ноль');
+                value /= next;
+                break;
+            }
+            i += 2;
+          } else {
+            i++;
+          }
+        }
+        return value;
+      }
+
+      function formatResult(num) {
+        if (!Number.isFinite(num)) return 'Ошибка';
+        const str = num.toString();
+        if (str.length > 12) {
+          const n = Number(num.toPrecision(10));
+          return n >= 1e9 || (n > 0 && n < 1e-6) ? n.toExponential(4) : String(n);
+        }
+        return str;
+      }
+
+      const calc = {
+        value: '0',
+        lastResult: null,
+
+        get display() {
+          return this.value || '0';
+        },
+
+        setDisplay(str) {
+          this.value = str;
+          displayEl.textContent = str || '0';
+          displayEl.classList.remove('error');
+        },
+
+        setError() {
+          displayEl.textContent = 'Ошибка';
+          displayEl.classList.add('error');
+          this.value = '';
+          this.lastResult = null;
+        },
+
+        append(char) {
+          const cur = this.value;
+          if (this.value === 'Ошибка' || this.value === '') this.value = '0';
+
+          if (char === '.') {
+            const parts = this.value.split(/[+\-×÷−]/);
+            const last = parts[parts.length - 1] || '';
+            if (last.includes('.') || last.includes('%')) return;
+            if (last === '' || /[×÷−+]$/.test(this.value)) this.value += '0';
+            this.value += '.';
+          } else if (/[+\-×÷−]/.test(char)) {
+            if (/[×÷−+]\s*$/.test(this.value)) {
+              this.value = this.value.replace(/[×÷−+]\s*$/, '');
+            }
+            if (this.value === '' || this.value === 'Ошибка') this.value = '0';
+            this.value += char;
+          } else if (char === '%') {
+            if (this.value === '' || /[×÷−+]$/.test(this.value)) return;
+            this.value += '%';
+          } else if (/\d/.test(char)) {
+            if (this.value === '0' && !this.value.includes('.')) this.value = '';
+            this.value += char;
+          }
+
+          this.setDisplay(this.value);
+        },
+
+        clear() {
+          this.value = '';
+          this.lastResult = null;
+          this.setDisplay('0');
+        },
+
+        backspace() {
+          if (this.value === 'Ошибка' || this.value === '') {
+            this.setDisplay('0');
+            return;
+          }
+          this.value = this.value.slice(0, -1);
+          this.setDisplay(this.value || '0');
+        },
+
+        equals() {
+          if (this.value === '' || this.value === 'Ошибка') return;
+          try {
+            const tokens = tokenize(this.value);
+            if (tokens.length === 0) return;
+            const result = evaluate(tokens);
+            const formatted = formatResult(result);
+            this.lastResult = formatted;
+            this.setDisplay(formatted);
+            this.value = formatted;
+          } catch (e) {
+            this.setError();
+          }
+        }
+      };
+
+      document.addEventListener('keydown', function (e) {
+        if (!document.getElementById('calculator').contains(document.activeElement) &&
+            document.activeElement !== displayEl) {
+          return;
+        }
+        if (e.key >= '0' && e.key <= '9') {
+          e.preventDefault();
+          calc.append(e.key);
+        } else if (e.key === '.' || e.key === ',') {
+          e.preventDefault();
+          calc.append('.');
+        } else if (e.key === '+') {
+          e.preventDefault();
+          calc.append('+');
+        } else if (e.key === '-') {
+          e.preventDefault();
+          calc.append('−');
+        } else if (e.key === '*') {
+          e.preventDefault();
+          calc.append('×');
+        } else if (e.key === '/') {
+          e.preventDefault();
+          calc.append('÷');
+        } else if (e.key === '%') {
+          e.preventDefault();
+          calc.append('%');
+        } else if (e.key === 'Enter' || e.key === '=') {
+          e.preventDefault();
+          calc.equals();
+        } else if (e.key === 'Backspace') {
+          e.preventDefault();
+          calc.backspace();
+        } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+          e.preventDefault();
+          calc.clear();
+        }
+      });
+
+      window.calc = calc;
+      calc.setDisplay('0');
+    })();
+  </script>
+</body>
+</html>
